@@ -353,9 +353,9 @@
         <label>
           输入类型
           <select id="quick-input-type">
-            <option value="pace" selected>配速（分:秒 / 公里）</option>
+            <option value="pace" selected>配速</option>
             <option value="time">时间（总用时）</option>
-            <option value="speed">时速（km/h）</option>
+            <option value="speed">时速</option>
           </select>
         </label>
         <label data-quick-input="pace">
@@ -415,8 +415,8 @@
             <thead>
               <tr>
                 <th>分段</th>
-                <th>该段距离</th>
-                <th>该段用时</th>
+                <th>累计距离</th>
+                <th>累计用时</th>
                 <th>平均配速</th>
               </tr>
             </thead>
@@ -441,8 +441,8 @@
           选择输入项
           <select id="flex-input-type">
             <option value="time">时间（总用时）</option>
-            <option value="pace" selected>配速（分:秒 / 公里）</option>
-            <option value="speed">时速（km/h）</option>
+            <option value="pace" selected>配速</option>
+            <option value="speed">时速</option>
           </select>
         </label>
         <label data-flex-input="time" hidden>
@@ -548,8 +548,8 @@
             <thead>
               <tr>
                 <th>分段</th>
-                <th>该段距离</th>
-                <th>该段用时</th>
+                <th>累计距离</th>
+                <th>累计用时</th>
                 <th>平均配速</th>
               </tr>
             </thead>
@@ -571,16 +571,28 @@
     let currentUnit = "km";
     let selectedQuickDistance = null;
 
-    const distances = [
-      { label: "3K", km: 3 },
-      { label: "5K", km: 5 },
-      { label: "10K", km: 10 },
-      { label: "15K", km: 15 },
-      { label: "20K", km: 20 },
-      { label: "30K", km: 30 },
-      { label: "半马", km: 21.0975 },
-      { label: "全马", km: 42.195 }
-    ];
+    const quickDistances = {
+      km: [
+        { km: 3, unitValue: 3 },
+        { km: 5, unitValue: 5 },
+        { km: 10, unitValue: 10 },
+        { km: 15, unitValue: 15 },
+        { km: 20, unitValue: 20 },
+        { km: 30, unitValue: 30 },
+        { km: 21.0975, unitValue: 21.1, label: "半马" },
+        { km: 42.195, unitValue: 42.2, label: "全马" }
+      ],
+      mi: [
+        { km: 3 / milesPerKm, unitValue: 3 },
+        { km: 5 / milesPerKm, unitValue: 5 },
+        { km: 10 / milesPerKm, unitValue: 10 },
+        { km: 15 / milesPerKm, unitValue: 15 },
+        { km: 20 / milesPerKm, unitValue: 20 },
+        { km: 30 / milesPerKm, unitValue: 30 },
+        { km: 21.0975, unitValue: 13.1, label: "半马" },
+        { km: 42.195, unitValue: 26.2, label: "全马" }
+      ]
+    };
 
     const quickTableBody = document.getElementById("quick-table-body");
     const quickInputType = document.getElementById("quick-input-type");
@@ -692,7 +704,12 @@
     function formatDistance(distanceKm, decimals = 1) {
       const unitDistance = getUnitDistance(distanceKm);
       const rounded = unitDistance >= 10 ? unitDistance.toFixed(1) : unitDistance.toFixed(decimals);
-      return `${rounded} ${unitLabels[currentUnit].distanceUnit}`;
+      return `${rounded}${unitLabels[currentUnit].name}`;
+    }
+
+    function formatUnitValue(value, decimals = 2) {
+      const rounded = value >= 10 ? value.toFixed(1) : value.toFixed(decimals);
+      return `${rounded}${unitLabels[currentUnit].name}`;
     }
 
     function formatSpeedByUnit(kmPerHour) {
@@ -741,10 +758,10 @@
       speedLabels.forEach((label) => {
         label.textContent = unitLabels[currentUnit].speedUnit;
       });
-      quickPaceOption.textContent = `配速（分:秒 / ${unitLabels[currentUnit].name}）`;
-      quickSpeedOption.textContent = `时速（${unitLabels[currentUnit].speedUnit}）`;
-      flexPaceOption.textContent = `配速（分:秒 / ${unitLabels[currentUnit].name}）`;
-      flexSpeedOption.textContent = `时速（${unitLabels[currentUnit].speedUnit}）`;
+      quickPaceOption.textContent = "配速";
+      quickSpeedOption.textContent = "时速";
+      flexPaceOption.textContent = "配速";
+      flexSpeedOption.textContent = "时速";
     }
 
     function convertInputValue(value, multiplier) {
@@ -797,27 +814,30 @@
       const segmentSize = getSegmentSize(distanceKm);
       const fullSegments = Math.floor(unitDistance / segmentSize);
       const remainder = unitDistance - fullSegments * segmentSize;
-      const secondsPerUnit = totalSeconds / unitDistance;
+      const secondsPerKm = totalSeconds / distanceKm;
       const segments = [];
-      let cumulative = 0;
+      let cumulativeDistance = 0;
+      let cumulativeSeconds = 0;
 
       for (let i = 0; i < fullSegments; i += 1) {
-        cumulative += segmentSize;
+        cumulativeDistance += segmentSize;
+        cumulativeSeconds += (totalSeconds / unitDistance) * segmentSize;
         segments.push({
           label: `第 ${i + 1} 段`,
-          distance: `${segmentSize.toFixed(1)} ${unitLabels[currentUnit].distanceUnit}`,
-          time: formatTime(secondsPerUnit * segmentSize),
-          pace: formatPace(secondsPerUnit)
+          distance: formatUnitValue(cumulativeDistance, 1),
+          time: formatTime(cumulativeSeconds),
+          pace: formatPaceByUnit(secondsPerKm)
         });
       }
 
       if (remainder > 0.05) {
-        cumulative += remainder;
+        cumulativeDistance += remainder;
+        cumulativeSeconds += (totalSeconds / unitDistance) * remainder;
         segments.push({
           label: `第 ${segments.length + 1} 段`,
-          distance: `${remainder.toFixed(2)} ${unitLabels[currentUnit].distanceUnit}`,
-          time: formatTime(secondsPerUnit * remainder),
-          pace: formatPace(secondsPerUnit)
+          distance: formatUnitValue(cumulativeDistance, 2),
+          time: formatTime(cumulativeSeconds),
+          pace: formatPaceByUnit(secondsPerKm)
         });
       }
 
@@ -854,13 +874,18 @@
         .join("");
     }
 
+    function getQuickDistanceLabel(distance) {
+      const formatted = formatUnitValue(distance.unitValue, 1);
+      return distance.label ? `${distance.label} (${formatted})` : formatted;
+    }
+
     function updateQuickMode() {
       const type = quickInputType.value;
       quickInputs.forEach((input) => {
         input.hidden = input.dataset.quickInput !== type;
       });
 
-      let rows = distances.map((distance) => {
+      let rows = quickDistances[currentUnit].map((distance) => {
         let totalSeconds = 0;
         if (type === "time") {
           totalSeconds = parseTime(timeHour.value, timeMin.value, timeSec.value);
@@ -878,7 +903,7 @@
         const speedValue = totalSeconds > 0 ? distance.km / (totalSeconds / 3600) : 0;
 
         return {
-          label: distance.label,
+          label: getQuickDistanceLabel(distance),
           time: formatTime(totalSeconds),
           pace: formatPaceByUnit(paceSeconds),
           speed: formatSpeedByUnit(speedValue),
@@ -928,7 +953,7 @@
       segmentCard.hidden = false;
       segmentTitle.textContent = `${formatDistance(distanceKm, 2)} 分段配速表`;
       segmentUnit.textContent = unitLabels[currentUnit].name;
-      segmentRule.textContent = `每 ${segmentData.segmentSize} ${unitLabels[currentUnit].distanceUnit} 分段`;
+      segmentRule.textContent = `每 ${segmentData.segmentSize} ${unitLabels[currentUnit].name} 分段`;
       renderSegmentTable(segmentData.segments, segmentTableBody);
     }
 
@@ -995,7 +1020,7 @@
           remainingSegmentCard.hidden = false;
           remainingTitle.textContent = `剩余 ${formatDistance(remainingDistanceKm, 2)} 配速表`;
           remainingUnit.textContent = unitLabels[currentUnit].name;
-          remainingRule.textContent = `按剩余距离每 ${segmentData.segmentSize} ${unitLabels[currentUnit].distanceUnit} 分段`;
+          remainingRule.textContent = `按剩余距离每 ${segmentData.segmentSize} ${unitLabels[currentUnit].name} 分段`;
           renderSegmentTable(segmentData.segments, remainingTableBody);
         } else {
           remainingSegmentCard.hidden = true;
