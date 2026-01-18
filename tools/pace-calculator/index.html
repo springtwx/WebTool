@@ -405,6 +405,7 @@
       <div class="mode-toggle" role="tablist">
         <button type="button" class="active" data-mode="quick">快捷模式</button>
         <button type="button" data-mode="flex">自由模式</button>
+        <button type="button" data-mode="tempo">节奏跑模式</button>
       </div>
     </header>
 
@@ -536,39 +537,6 @@
         </div>
       </div>
 
-      <div class="divider"></div>
-      <h3>节奏跑模式</h3>
-      <p class="subtle">为同一次跑步设置多个分段配速，自动计算整体平均配速与时速。</p>
-      <div class="tempo-row tempo-row--header">
-        <span>分段距离（<span data-unit-distance>公里</span>）</span>
-        <span>分段配速（分:秒 / <span data-unit-distance>公里</span>）</span>
-        <span>操作</span>
-      </div>
-      <div class="tempo-rows" id="tempo-rows"></div>
-      <div class="tempo-actions">
-        <button type="button" id="tempo-add-row">新增分段</button>
-      </div>
-
-      <div class="result-grid">
-        <div class="result-card">
-          <span class="subtle">总距离</span>
-          <strong id="tempo-total-distance">--</strong>
-        </div>
-        <div class="result-card">
-          <span class="subtle">总用时</span>
-          <strong id="tempo-total-time">--</strong>
-        </div>
-        <div class="result-card">
-          <span class="subtle">平均配速</span>
-          <strong id="tempo-avg-pace">--</strong>
-        </div>
-        <div class="result-card">
-          <span class="subtle">平均时速</span>
-          <strong id="tempo-avg-speed">--</strong>
-        </div>
-      </div>
-
-      <div class="divider"></div>
       <h3>训练进度推算</h3>
       <p class="subtle">基于自由模式的距离输入当前进度，自动使用上方完赛时间计算目标配速与剩余分段表。</p>
       <div class="input-grid">
@@ -625,6 +593,39 @@
           </table>
         </div>
       </section>
+    </section>
+
+    <section class="card section" id="tempo-section">
+      <h2>节奏跑模式</h2>
+      <p class="subtle">为同一次跑步设置多个分段配速，自动计算整体平均配速与时速。</p>
+      <div class="tempo-row tempo-row--header">
+        <span>分段距离（<span data-unit-distance>公里</span>）</span>
+        <span>分段配速（分:秒 / <span data-unit-distance>公里</span>）</span>
+        <span>操作</span>
+      </div>
+      <div class="tempo-rows" id="tempo-rows"></div>
+      <div class="tempo-actions">
+        <button type="button" id="tempo-add-row">新增分段</button>
+      </div>
+
+      <div class="result-grid">
+        <div class="result-card">
+          <span class="subtle">总距离</span>
+          <strong id="tempo-total-distance">--</strong>
+        </div>
+        <div class="result-card">
+          <span class="subtle">总用时</span>
+          <strong id="tempo-total-time">--</strong>
+        </div>
+        <div class="result-card">
+          <span class="subtle">平均配速</span>
+          <strong id="tempo-avg-pace">--</strong>
+        </div>
+        <div class="result-card">
+          <span class="subtle">平均时速</span>
+          <strong id="tempo-avg-speed">--</strong>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -1083,7 +1084,6 @@
       flexResultTime.textContent = formatTime(totalSeconds);
       flexResultPace.textContent = formatPaceByUnit(finalPace);
       flexResultSpeed.textContent = formatSpeedByUnit(finalSpeed);
-      updateTempoMode();
       updateProgressMode();
     }
 
@@ -1220,6 +1220,7 @@
         const mode = button.dataset.mode;
         document.getElementById("quick-section").classList.toggle("active", mode === "quick");
         document.getElementById("flex-section").classList.toggle("active", mode === "flex");
+        document.getElementById("tempo-section").classList.toggle("active", mode === "tempo");
       });
     });
 
