@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Base64 编解码器</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --card: #ffffff;
+      --text: #1b1f24;
+      --muted: #5b6776;
+      --accent: #1f5eff;
+      --border: #e3e7ee;
+      font-family: "Inter", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    header a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 30px;
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .copy-link {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: border 0.2s ease, color 0.2s ease;
+    }
+
+    .copy-link:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 24px;
+      box-shadow: 0 12px 24px rgba(14, 23, 38, 0.06);
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 200px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+      resize: vertical;
+      font-family: inherit;
+      color: var(--text);
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+
+    button.action {
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .status {
+      min-height: 20px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <a href="../../">← 返回工具首页</a>
+      <div class="header-actions">
+        <h1>Base64 编解码器</h1>
+        <button class="copy-link" type="button" id="copy-link">复制此工具链接</button>
+      </div>
+      <p>支持文本与 Base64 互转，适合快速验证或分享。</p>
+    </header>
+
+    <section class="card">
+      <div class="input-grid">
+        <label>
+          原文 / 明文
+          <textarea id="plain-input" placeholder="在这里输入文本"></textarea>
+        </label>
+        <label>
+          Base64
+          <textarea id="base64-input" placeholder="在这里输入 Base64"></textarea>
+        </label>
+      </div>
+
+      <div class="controls">
+        <button class="action" type="button" id="encode">编码 →</button>
+        <button class="action" type="button" id="decode">← 解码</button>
+        <button class="action secondary" type="button" id="swap">交换内容</button>
+        <button class="action secondary" type="button" id="copy-base64">复制 Base64</button>
+        <button class="action secondary" type="button" id="clear">清空</button>
+      </div>
+
+      <div class="status" id="status"></div>
+      <p class="subtle">提示：编码/解码将保持 UTF-8 兼容，若无法识别将提示错误。</p>
+    </section>
+  </main>
+
+  <script>
+    const copyButton = document.getElementById("copy-link");
+    const plainInput = document.getElementById("plain-input");
+    const base64Input = document.getElementById("base64-input");
+    const status = document.getElementById("status");
+
+    function setStatus(message, isError = false) {
+      status.textContent = message;
+      status.style.color = isError ? "#c0392b" : "var(--muted)";
+    }
+
+    function encodeToBase64(text) {
+      return btoa(encodeURIComponent(text).replace(/%([0-9A-F]{2})/g, (_, code) => String.fromCharCode(parseInt(code, 16))));
+    }
+
+    function decodeFromBase64(text) {
+      const decoded = atob(text);
+      return decodeURIComponent(
+        Array.from(decoded)
+          .map((char) => `%${char.charCodeAt(0).toString(16).padStart(2, "0")}`)
+          .join("")
+      );
+    }
+
+    function copyText(text) {
+      if (!text) {
+        setStatus("没有可复制的内容", true);
+        return;
+      }
+      navigator.clipboard.writeText(text).then(
+        () => setStatus("已复制到剪贴板"),
+        () => window.prompt("复制失败，请手动复制：", text)
+      );
+    }
+
+    document.getElementById("encode").addEventListener("click", () => {
+      try {
+        const encoded = encodeToBase64(plainInput.value);
+        base64Input.value = encoded;
+        setStatus("已编码");
+      } catch (error) {
+        setStatus("编码失败，请检查输入内容", true);
+      }
+    });
+
+    document.getElementById("decode").addEventListener("click", () => {
+      try {
+        const decoded = decodeFromBase64(base64Input.value.trim());
+        plainInput.value = decoded;
+        setStatus("已解码");
+      } catch (error) {
+        setStatus("解码失败，请确认 Base64 是否正确", true);
+      }
+    });
+
+    document.getElementById("swap").addEventListener("click", () => {
+      const temp = plainInput.value;
+      plainInput.value = base64Input.value;
+      base64Input.value = temp;
+      setStatus("已交换内容");
+    });
+
+    document.getElementById("copy-base64").addEventListener("click", () => {
+      copyText(base64Input.value);
+    });
+
+    document.getElementById("clear").addEventListener("click", () => {
+      plainInput.value = "";
+      base64Input.value = "";
+      setStatus("已清空");
+    });
+
+    copyButton.addEventListener("click", async () => {
+      const url = window.location.href;
+      try {
+        await navigator.clipboard.writeText(url);
+        copyButton.textContent = "已复制";
+      } catch (error) {
+        window.prompt("复制失败，请手动复制：", url);
+      }
+      window.setTimeout(() => {
+        copyButton.textContent = "复制此工具链接";
+      }, 1500);
+    });
+  </script>
+</body>
+</html>
