@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>跑步配速计算器</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --card: #ffffff;
+      --text: #1b1f24;
+      --muted: #5b6776;
+      --accent: #1f5eff;
+      --border: #e3e7ee;
+      font-family: "Inter", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    header a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 30px;
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .copy-link {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: border 0.2s ease, color 0.2s ease;
+    }
+
+    .copy-link:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 24px;
+      box-shadow: 0 12px 24px rgba(14, 23, 38, 0.06);
+    }
+
+    .mode-toggle {
+      display: inline-flex;
+      background: #eef1f6;
+      border-radius: 999px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .mode-toggle button {
+      border: none;
+      background: transparent;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 14px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .mode-toggle button.active {
+      background: var(--card);
+      color: var(--text);
+      font-weight: 600;
+      box-shadow: 0 4px 10px rgba(14, 23, 38, 0.08);
+    }
+
+    .section {
+      display: none;
+      margin-top: 24px;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    select,
+    input {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 12px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .result-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .result-card strong {
+      font-size: 18px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0 8px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <a href="../../">← 返回工具首页</a>
+      <div class="header-actions">
+        <h1>跑步配速计算器</h1>
+        <button class="copy-link" type="button" id="copy-link">复制此工具链接</button>
+      </div>
+      <p>切换快捷模式或自由模式，快速得到配速、时速与完赛时间。</p>
+      <div class="mode-toggle" role="tablist">
+        <button type="button" class="active" data-mode="quick">快捷模式</button>
+        <button type="button" data-mode="flex">自由模式</button>
+      </div>
+    </header>
+
+    <section class="card section active" id="quick-section">
+      <h2>快捷模式</h2>
+      <p class="subtle">选择输入类型后，即可看到常见比赛距离的配速与完赛时间。</p>
+      <div class="input-grid">
+        <label>
+          输入类型
+          <select id="quick-input-type">
+            <option value="pace" selected>配速（分:秒 / 公里）</option>
+            <option value="time">时间（总用时）</option>
+            <option value="speed">时速（km/h）</option>
+          </select>
+        </label>
+        <label data-quick-input="pace">
+          配速（分:秒 / 公里）
+          <div class="input-grid" style="grid-template-columns: repeat(2, minmax(80px, 1fr));">
+            <input type="number" id="pace-min" min="0" placeholder="分" />
+            <input type="number" id="pace-sec" min="0" max="59" placeholder="秒" />
+          </div>
+        </label>
+        <label data-quick-input="time" hidden>
+          时间（总用时）
+          <div class="input-grid" style="grid-template-columns: repeat(3, minmax(70px, 1fr));">
+            <input type="number" id="time-hour" min="0" placeholder="时" />
+            <input type="number" id="time-min" min="0" max="59" placeholder="分" />
+            <input type="number" id="time-sec" min="0" max="59" placeholder="秒" />
+          </div>
+        </label>
+        <label data-quick-input="speed" hidden>
+          时速（km/h）
+          <input type="number" id="speed-input" min="0" step="0.1" placeholder="例如 12.0" />
+        </label>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>距离</th>
+            <th>完赛时间</th>
+            <th>配速</th>
+            <th>时速</th>
+          </tr>
+        </thead>
+        <tbody id="quick-table-body"></tbody>
+      </table>
+    </section>
+
+    <section class="card section" id="flex-section">
+      <h2>自由模式</h2>
+      <p class="subtle">填写距离 + 任意一项即可计算另外两项（时间、配速、时速）。</p>
+      <div class="input-grid">
+        <label>
+          距离（公里）
+          <input type="number" id="flex-distance" min="0" step="0.01" placeholder="例如 10" />
+        </label>
+        <label>
+          时间（总用时）
+          <div class="input-grid" style="grid-template-columns: repeat(3, minmax(70px, 1fr));">
+            <input type="number" id="flex-hour" min="0" placeholder="时" />
+            <input type="number" id="flex-min" min="0" max="59" placeholder="分" />
+            <input type="number" id="flex-sec" min="0" max="59" placeholder="秒" />
+          </div>
+        </label>
+        <label>
+          配速（分:秒 / 公里）
+          <div class="input-grid" style="grid-template-columns: repeat(2, minmax(80px, 1fr));">
+            <input type="number" id="flex-pace-min" min="0" placeholder="分" />
+            <input type="number" id="flex-pace-sec" min="0" max="59" placeholder="秒" />
+          </div>
+        </label>
+        <label>
+          时速（km/h）
+          <input type="number" id="flex-speed" min="0" step="0.1" placeholder="例如 12.0" />
+        </label>
+      </div>
+
+      <div class="divider"></div>
+      <div class="result-grid">
+        <div class="result-card">
+          <span class="subtle">完赛时间</span>
+          <strong id="flex-result-time">--</strong>
+        </div>
+        <div class="result-card">
+          <span class="subtle">配速（分:秒 / 公里）</span>
+          <strong id="flex-result-pace">--</strong>
+        </div>
+        <div class="result-card">
+          <span class="subtle">时速（km/h）</span>
+          <strong id="flex-result-speed">--</strong>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const copyButton = document.getElementById("copy-link");
+    const distances = [
+      { label: "5K", km: 5 },
+      { label: "10K", km: 10 },
+      { label: "半马", km: 21.0975 },
+      { label: "全马", km: 42.195 }
+    ];
+
+    const quickTableBody = document.getElementById("quick-table-body");
+    const quickInputType = document.getElementById("quick-input-type");
+    const quickInputs = document.querySelectorAll("[data-quick-input]");
+
+    const timeHour = document.getElementById("time-hour");
+    const timeMin = document.getElementById("time-min");
+    const timeSec = document.getElementById("time-sec");
+
+    const paceMin = document.getElementById("pace-min");
+    const paceSec = document.getElementById("pace-sec");
+
+    const speedInput = document.getElementById("speed-input");
+
+    const flexDistance = document.getElementById("flex-distance");
+    const flexHour = document.getElementById("flex-hour");
+    const flexMin = document.getElementById("flex-min");
+    const flexSec = document.getElementById("flex-sec");
+    const flexPaceMin = document.getElementById("flex-pace-min");
+    const flexPaceSec = document.getElementById("flex-pace-sec");
+    const flexSpeed = document.getElementById("flex-speed");
+
+    const flexResultTime = document.getElementById("flex-result-time");
+    const flexResultPace = document.getElementById("flex-result-pace");
+    const flexResultSpeed = document.getElementById("flex-result-speed");
+
+    function toNumber(value) {
+      const number = Number(value);
+      return Number.isFinite(number) ? number : 0;
+    }
+
+    function parseTime(hours, minutes, seconds) {
+      return toNumber(hours) * 3600 + toNumber(minutes) * 60 + toNumber(seconds);
+    }
+
+    function parsePace(minutes, seconds) {
+      return toNumber(minutes) * 60 + toNumber(seconds);
+    }
+
+    function formatTime(totalSeconds) {
+      if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
+        return "--";
+      }
+      const rounded = Math.round(totalSeconds);
+      const hours = Math.floor(rounded / 3600);
+      const minutes = Math.floor((rounded % 3600) / 60);
+      const seconds = rounded % 60;
+      const parts = [hours, minutes, seconds].map((part) => String(part).padStart(2, "0"));
+      return parts.join(":");
+    }
+
+    function formatPace(secondsPerKm) {
+      if (!Number.isFinite(secondsPerKm) || secondsPerKm <= 0) {
+        return "--";
+      }
+      const rounded = Math.round(secondsPerKm);
+      const minutes = Math.floor(rounded / 60);
+      const seconds = rounded % 60;
+      return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    function formatSpeed(kmPerHour) {
+      if (!Number.isFinite(kmPerHour) || kmPerHour <= 0) {
+        return "--";
+      }
+      return kmPerHour.toFixed(1);
+    }
+
+    function renderQuickTable(rows) {
+      quickTableBody.innerHTML = rows
+        .map(
+          (row) => `
+          <tr>
+            <td>${row.label}</td>
+            <td>${row.time}</td>
+            <td>${row.pace}</td>
+            <td>${row.speed}</td>
+          </tr>
+        `
+        )
+        .join("");
+    }
+
+    function updateQuickMode() {
+      const type = quickInputType.value;
+      quickInputs.forEach((input) => {
+        input.hidden = input.dataset.quickInput !== type;
+      });
+
+      let rows = distances.map((distance) => {
+        let totalSeconds = 0;
+        if (type === "time") {
+          totalSeconds = parseTime(timeHour.value, timeMin.value, timeSec.value);
+        }
+        if (type === "pace") {
+          const paceSeconds = parsePace(paceMin.value, paceSec.value);
+          totalSeconds = paceSeconds * distance.km;
+        }
+        if (type === "speed") {
+          const speedValue = toNumber(speedInput.value);
+          totalSeconds = speedValue > 0 ? (distance.km / speedValue) * 3600 : 0;
+        }
+
+        const paceSeconds = totalSeconds > 0 ? totalSeconds / distance.km : 0;
+        const speedValue = totalSeconds > 0 ? distance.km / (totalSeconds / 3600) : 0;
+
+        return {
+          label: distance.label,
+          time: formatTime(totalSeconds),
+          pace: formatPace(paceSeconds),
+          speed: formatSpeed(speedValue)
+        };
+      });
+
+      renderQuickTable(rows);
+    }
+
+    function updateFlexMode() {
+      const distanceKm = toNumber(flexDistance.value);
+      const timeSeconds = parseTime(flexHour.value, flexMin.value, flexSec.value);
+      const paceSeconds = parsePace(flexPaceMin.value, flexPaceSec.value);
+      const speedValue = toNumber(flexSpeed.value);
+
+      let totalSeconds = 0;
+
+      if (distanceKm > 0) {
+        if (timeSeconds > 0) {
+          totalSeconds = timeSeconds;
+        } else if (paceSeconds > 0) {
+          totalSeconds = paceSeconds * distanceKm;
+        } else if (speedValue > 0) {
+          totalSeconds = (distanceKm / speedValue) * 3600;
+        }
+      }
+
+      const finalPace = totalSeconds > 0 && distanceKm > 0 ? totalSeconds / distanceKm : 0;
+      const finalSpeed = totalSeconds > 0 ? distanceKm / (totalSeconds / 3600) : 0;
+
+      flexResultTime.textContent = formatTime(totalSeconds);
+      flexResultPace.textContent = formatPace(finalPace);
+      flexResultSpeed.textContent = formatSpeed(finalSpeed);
+    }
+
+    function bindInputs(inputs, handler) {
+      inputs.forEach((input) => {
+        input.addEventListener("input", handler);
+      });
+    }
+
+    bindInputs([quickInputType, timeHour, timeMin, timeSec, paceMin, paceSec, speedInput], updateQuickMode);
+    bindInputs(
+      [flexDistance, flexHour, flexMin, flexSec, flexPaceMin, flexPaceSec, flexSpeed],
+      updateFlexMode
+    );
+
+    document.querySelectorAll(".mode-toggle button").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".mode-toggle button").forEach((btn) => btn.classList.remove("active"));
+        button.classList.add("active");
+        const mode = button.dataset.mode;
+        document.getElementById("quick-section").classList.toggle("active", mode === "quick");
+        document.getElementById("flex-section").classList.toggle("active", mode === "flex");
+      });
+    });
+
+    updateQuickMode();
+    updateFlexMode();
+
+    copyButton.addEventListener("click", async () => {
+      const url = window.location.href;
+      try {
+        await navigator.clipboard.writeText(url);
+        copyButton.textContent = "已复制";
+      } catch (error) {
+        window.prompt("复制失败，请手动复制：", url);
+      }
+      window.setTimeout(() => {
+        copyButton.textContent = "复制此工具链接";
+      }, 1500);
+    });
+  </script>
+</body>
+</html>
