@@ -283,6 +283,17 @@
       color: #c24d1d;
     }
 
+    .label-inline {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .label-inline .unit-inline {
+      white-space: nowrap;
+    }
+
     @media (max-width: 720px) {
       main {
         padding: 40px 20px 64px;
@@ -348,7 +359,10 @@
           </select>
         </label>
         <label data-quick-input="pace">
-          配速（分:秒 / <span data-unit-distance>公里</span>）
+          <span class="label-inline">
+            配速
+            <span class="unit-inline">（分:秒 / <span data-unit-distance>公里</span>）</span>
+          </span>
           <div class="input-grid" style="grid-template-columns: repeat(2, minmax(80px, 1fr));">
             <input type="number" id="pace-min" min="0" placeholder="分" />
             <input type="number" id="pace-sec" min="0" max="59" placeholder="秒" />
@@ -363,7 +377,10 @@
           </div>
         </label>
         <label data-quick-input="speed" hidden>
-          时速（<span data-unit-speed>km/h</span>）
+          <span class="label-inline">
+            时速
+            <span class="unit-inline">（<span data-unit-speed>km/h</span>）</span>
+          </span>
           <input type="number" id="speed-input" min="0" step="0.1" placeholder="例如 12.0" />
         </label>
       </div>
@@ -414,7 +431,10 @@
       <p class="subtle">填写距离 + 选择一项输入，即可计算另外两项（时间、配速、时速）。</p>
       <div class="input-grid">
         <label>
-          距离（<span data-unit-distance>公里</span>）
+          <span class="label-inline">
+            距离
+            <span class="unit-inline">（<span data-unit-distance>公里</span>）</span>
+          </span>
           <input type="number" id="flex-distance" min="0" step="0.01" placeholder="例如 10" />
         </label>
         <label>
@@ -434,14 +454,20 @@
           </div>
         </label>
         <label data-flex-input="pace" hidden>
-          配速（分:秒 / <span data-unit-distance>公里</span>）
+          <span class="label-inline">
+            配速
+            <span class="unit-inline">（分:秒 / <span data-unit-distance>公里</span>）</span>
+          </span>
           <div class="input-grid" style="grid-template-columns: repeat(2, minmax(80px, 1fr));">
             <input type="number" id="flex-pace-min" min="0" placeholder="分" />
             <input type="number" id="flex-pace-sec" min="0" max="59" placeholder="秒" />
           </div>
         </label>
         <label data-flex-input="speed" hidden>
-          时速（<span data-unit-speed>km/h</span>）
+          <span class="label-inline">
+            时速
+            <span class="unit-inline">（<span data-unit-speed>km/h</span>）</span>
+          </span>
           <input type="number" id="flex-speed" min="0" step="0.1" placeholder="例如 12.0" />
         </label>
       </div>
@@ -453,25 +479,28 @@
           <strong id="flex-result-time">--</strong>
         </div>
         <div class="result-card">
-          <span class="subtle">配速（分:秒 / <span data-unit-distance>公里</span>）</span>
+          <span class="subtle">
+            配速（分:秒 / <span class="unit-inline"><span data-unit-distance>公里</span></span>）
+          </span>
           <strong id="flex-result-pace">--</strong>
         </div>
         <div class="result-card">
-          <span class="subtle">时速（<span data-unit-speed>km/h</span>）</span>
+          <span class="subtle">
+            时速（<span class="unit-inline"><span data-unit-speed>km/h</span></span>）
+          </span>
           <strong id="flex-result-speed">--</strong>
         </div>
       </div>
 
       <div class="divider"></div>
       <h3>训练进度推算</h3>
-      <p class="subtle">输入当前进度与目标时间（可选），生成预测完赛时间与剩余分段配速表。</p>
+      <p class="subtle">基于自由模式的距离输入当前进度与目标时间（可选），生成预测完赛时间与剩余分段配速表。</p>
       <div class="input-grid">
         <label>
-          总距离（<span data-unit-distance>公里</span>）
-          <input type="number" id="progress-total-distance" min="0" step="0.01" placeholder="例如 21.1" />
-        </label>
-        <label>
-          已跑距离（<span data-unit-distance>公里</span>）
+          <span class="label-inline">
+            已跑距离
+            <span class="unit-inline">（<span data-unit-distance>公里</span>）</span>
+          </span>
           <input type="number" id="progress-current-distance" min="0" step="0.01" placeholder="例如 10" />
         </label>
         <label>
@@ -556,6 +585,8 @@
     const quickTableBody = document.getElementById("quick-table-body");
     const quickInputType = document.getElementById("quick-input-type");
     const quickInputs = document.querySelectorAll("[data-quick-input]");
+    const quickPaceOption = quickInputType.querySelector('option[value="pace"]');
+    const quickSpeedOption = quickInputType.querySelector('option[value="speed"]');
 
     const timeHour = document.getElementById("time-hour");
     const timeMin = document.getElementById("time-min");
@@ -569,6 +600,8 @@
     const flexDistance = document.getElementById("flex-distance");
     const flexInputType = document.getElementById("flex-input-type");
     const flexInputs = document.querySelectorAll("[data-flex-input]");
+    const flexPaceOption = flexInputType.querySelector('option[value="pace"]');
+    const flexSpeedOption = flexInputType.querySelector('option[value="speed"]');
     const flexHour = document.getElementById("flex-hour");
     const flexMin = document.getElementById("flex-min");
     const flexSec = document.getElementById("flex-sec");
@@ -586,7 +619,6 @@
     const segmentUnit = document.getElementById("segment-unit");
     const segmentRule = document.getElementById("segment-rule");
 
-    const progressTotalDistance = document.getElementById("progress-total-distance");
     const progressCurrentDistance = document.getElementById("progress-current-distance");
     const progressHour = document.getElementById("progress-hour");
     const progressMin = document.getElementById("progress-min");
@@ -709,6 +741,10 @@
       speedLabels.forEach((label) => {
         label.textContent = unitLabels[currentUnit].speedUnit;
       });
+      quickPaceOption.textContent = `配速（分:秒 / ${unitLabels[currentUnit].name}）`;
+      quickSpeedOption.textContent = `时速（${unitLabels[currentUnit].speedUnit}）`;
+      flexPaceOption.textContent = `配速（分:秒 / ${unitLabels[currentUnit].name}）`;
+      flexSpeedOption.textContent = `时速（${unitLabels[currentUnit].speedUnit}）`;
     }
 
     function convertInputValue(value, multiplier) {
@@ -745,7 +781,6 @@
       const multiplier = fromUnit === "km" && toUnit === "mi" ? milesPerKm : 1 / milesPerKm;
 
       flexDistance.value = convertInputValue(toNumber(flexDistance.value), multiplier);
-      progressTotalDistance.value = convertInputValue(toNumber(progressTotalDistance.value), multiplier);
       progressCurrentDistance.value = convertInputValue(toNumber(progressCurrentDistance.value), multiplier);
 
       speedInput.value = convertInputValue(toNumber(speedInput.value), multiplier);
@@ -930,7 +965,7 @@
     }
 
     function updateProgressMode() {
-      const totalDistanceKm = convertDistanceToKm(toNumber(progressTotalDistance.value));
+      const totalDistanceKm = convertDistanceToKm(toNumber(flexDistance.value));
       const currentDistanceKm = convertDistanceToKm(toNumber(progressCurrentDistance.value));
       const elapsedSeconds = parseTime(progressHour.value, progressMin.value, progressSec.value);
       const targetSeconds = parseTime(targetHour.value, targetMin.value, targetSec.value);
@@ -983,16 +1018,7 @@
       updateFlexMode
     );
     bindInputs(
-      [
-        progressTotalDistance,
-        progressCurrentDistance,
-        progressHour,
-        progressMin,
-        progressSec,
-        targetHour,
-        targetMin,
-        targetSec
-      ],
+      [progressCurrentDistance, progressHour, progressMin, progressSec, targetHour, targetMin, targetSec],
       updateProgressMode
     );
 
