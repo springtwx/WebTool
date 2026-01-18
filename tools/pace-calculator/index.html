@@ -294,6 +294,59 @@
       white-space: nowrap;
     }
 
+    .tempo-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .tempo-row {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 0.4fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .tempo-row--header {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .tempo-row--header span {
+      padding-left: 4px;
+    }
+
+    .tempo-row .pace-inputs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(80px, 1fr));
+      gap: 8px;
+    }
+
+    .tempo-row button {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    .tempo-actions {
+      margin-top: 12px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .tempo-actions button {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
     @media (max-width: 720px) {
       main {
         padding: 40px 20px 64px;
@@ -323,6 +376,15 @@
 
       table {
         min-width: 420px;
+      }
+
+      .tempo-row {
+        grid-template-columns: 1fr;
+      }
+
+      .tempo-actions {
+        flex-direction: column;
+        align-items: stretch;
       }
     }
   </style>
@@ -475,6 +537,38 @@
       </div>
 
       <div class="divider"></div>
+      <h3>节奏跑模式</h3>
+      <p class="subtle">为同一次跑步设置多个分段配速，自动计算整体平均配速与时速。</p>
+      <div class="tempo-row tempo-row--header">
+        <span>分段距离（<span data-unit-distance>公里</span>）</span>
+        <span>分段配速（分:秒 / <span data-unit-distance>公里</span>）</span>
+        <span>操作</span>
+      </div>
+      <div class="tempo-rows" id="tempo-rows"></div>
+      <div class="tempo-actions">
+        <button type="button" id="tempo-add-row">新增分段</button>
+      </div>
+
+      <div class="result-grid">
+        <div class="result-card">
+          <span class="subtle">总距离</span>
+          <strong id="tempo-total-distance">--</strong>
+        </div>
+        <div class="result-card">
+          <span class="subtle">总用时</span>
+          <strong id="tempo-total-time">--</strong>
+        </div>
+        <div class="result-card">
+          <span class="subtle">平均配速</span>
+          <strong id="tempo-avg-pace">--</strong>
+        </div>
+        <div class="result-card">
+          <span class="subtle">平均时速</span>
+          <strong id="tempo-avg-speed">--</strong>
+        </div>
+      </div>
+
+      <div class="divider"></div>
       <h3>训练进度推算</h3>
       <p class="subtle">基于自由模式的距离输入当前进度，自动使用上方完赛时间计算目标配速与剩余分段表。</p>
       <div class="input-grid">
@@ -599,6 +693,13 @@
     const flexResultTime = document.getElementById("flex-result-time");
     const flexResultPace = document.getElementById("flex-result-pace");
     const flexResultSpeed = document.getElementById("flex-result-speed");
+
+    const tempoRows = document.getElementById("tempo-rows");
+    const tempoAddRow = document.getElementById("tempo-add-row");
+    const tempoTotalDistance = document.getElementById("tempo-total-distance");
+    const tempoTotalTime = document.getElementById("tempo-total-time");
+    const tempoAvgPace = document.getElementById("tempo-avg-pace");
+    const tempoAvgSpeed = document.getElementById("tempo-avg-speed");
 
     const segmentCard = document.getElementById("quick-segment-card");
     const segmentTableBody = document.getElementById("segment-table-body");
@@ -763,6 +864,23 @@
       }
     }
 
+    function convertTempoInputs(distanceMultiplier, paceMultiplier) {
+      tempoRows.querySelectorAll("[data-tempo-row]").forEach((row) => {
+        const distanceInput = row.querySelector("[data-tempo-distance]");
+        const paceMinInput = row.querySelector("[data-tempo-pace-min]");
+        const paceSecInput = row.querySelector("[data-tempo-pace-sec]");
+
+        distanceInput.value = convertInputValue(toNumber(distanceInput.value), distanceMultiplier);
+
+        const paceValue = parsePace(paceMinInput.value, paceSecInput.value);
+        if (paceValue > 0) {
+          const converted = paceValue * paceMultiplier;
+          paceMinInput.value = Math.floor(converted / 60);
+          paceSecInput.value = Math.round(converted % 60);
+        }
+      });
+    }
+
     function convertUnits(fromUnit, toUnit) {
       if (fromUnit === toUnit) {
         return;
@@ -776,6 +894,10 @@
       flexSpeed.value = convertInputValue(toNumber(flexSpeed.value), multiplier);
 
       convertPaceInputs(fromUnit === "km" && toUnit === "mi" ? 1 / milesPerKm : milesPerKm);
+      convertTempoInputs(
+        multiplier,
+        fromUnit === "km" && toUnit === "mi" ? 1 / milesPerKm : milesPerKm
+      );
     }
 
     function buildSegments(distanceKm, totalSeconds) {
@@ -961,7 +1083,56 @@
       flexResultTime.textContent = formatTime(totalSeconds);
       flexResultPace.textContent = formatPaceByUnit(finalPace);
       flexResultSpeed.textContent = formatSpeedByUnit(finalSpeed);
+      updateTempoMode();
       updateProgressMode();
+    }
+
+    function createTempoRow() {
+      const row = document.createElement("div");
+      row.className = "tempo-row";
+      row.dataset.tempoRow = "true";
+      row.innerHTML = `
+        <input type="number" min="0" step="0.01" placeholder="分段距离" data-tempo-distance aria-label="分段距离" />
+        <div class="pace-inputs">
+          <input type="number" min="0" placeholder="分" data-tempo-pace-min aria-label="分段配速 分钟" />
+          <input type="number" min="0" max="59" placeholder="秒" data-tempo-pace-sec aria-label="分段配速 秒" />
+        </div>
+        <button type="button" data-tempo-remove>移除</button>
+      `;
+      row.querySelectorAll("input").forEach((input) => {
+        input.addEventListener("input", updateTempoMode);
+      });
+      row.querySelector("[data-tempo-remove]").addEventListener("click", () => {
+        row.remove();
+        updateTempoMode();
+      });
+      return row;
+    }
+
+    function updateTempoMode() {
+      let totalDistanceKm = 0;
+      let totalSeconds = 0;
+
+      tempoRows.querySelectorAll("[data-tempo-row]").forEach((row) => {
+        const distanceValue = toNumber(row.querySelector("[data-tempo-distance]").value);
+        const paceMinValue = row.querySelector("[data-tempo-pace-min]").value;
+        const paceSecValue = row.querySelector("[data-tempo-pace-sec]").value;
+        const distanceKm = convertDistanceToKm(distanceValue);
+        const paceSecondsKm = convertPaceToKm(parsePace(paceMinValue, paceSecValue));
+
+        if (distanceKm > 0 && paceSecondsKm > 0) {
+          totalDistanceKm += distanceKm;
+          totalSeconds += distanceKm * paceSecondsKm;
+        }
+      });
+
+      const avgPace = totalDistanceKm > 0 ? totalSeconds / totalDistanceKm : 0;
+      const avgSpeed = totalSeconds > 0 ? totalDistanceKm / (totalSeconds / 3600) : 0;
+
+      tempoTotalDistance.textContent = totalDistanceKm > 0 ? formatDistance(totalDistanceKm, 2) : "--";
+      tempoTotalTime.textContent = formatTime(totalSeconds);
+      tempoAvgPace.textContent = formatPaceByUnit(avgPace);
+      tempoAvgSpeed.textContent = formatSpeedByUnit(avgSpeed);
     }
 
     function updateProgressMode() {
@@ -1023,6 +1194,11 @@
     );
     bindInputs([progressCurrentDistance, progressHour, progressMin, progressSec], updateProgressMode);
 
+    tempoAddRow.addEventListener("click", () => {
+      tempoRows.appendChild(createTempoRow());
+      updateTempoMode();
+    });
+
     unitButtons.forEach((button) => {
       button.addEventListener("click", () => {
         unitButtons.forEach((btn) => btn.classList.remove("active"));
@@ -1051,6 +1227,8 @@
     updateFlexMode();
     updateProgressMode();
     updateUnitLabels();
+    tempoRows.appendChild(createTempoRow());
+    updateTempoMode();
 
     copyButton.addEventListener("click", async () => {
       const url = window.location.href;
