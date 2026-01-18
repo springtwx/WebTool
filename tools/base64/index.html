@@ -237,14 +237,6 @@
     const plainInput = document.getElementById("plain-input");
     const base64Input = document.getElementById("base64-input");
     const status = document.getElementById("status");
-    const labelButtons = document.querySelectorAll("[data-label-desktop][data-label-mobile]");
-
-    function updateButtonLabels() {
-      const isMobile = window.matchMedia("(max-width: 520px)").matches;
-      labelButtons.forEach((button) => {
-        button.textContent = isMobile ? button.dataset.labelMobile : button.dataset.labelDesktop;
-      });
-    }
 
     function setStatus(message, isError = false) {
       status.textContent = message;
@@ -311,9 +303,6 @@
       base64Input.value = "";
       setStatus("已清空");
     });
-
-    updateButtonLabels();
-    window.addEventListener("resize", updateButtonLabels);
 
     copyButton.addEventListener("click", async () => {
       const url = window.location.href;
