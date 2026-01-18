@@ -20,6 +20,10 @@
       box-sizing: border-box;
     }
 
+    [hidden] {
+      display: none !important;
+    }
+
     body {
       margin: 0;
       background: var(--bg);
@@ -309,12 +313,12 @@
         <label>
           选择输入项
           <select id="flex-input-type">
-            <option value="time" selected>时间（总用时）</option>
-            <option value="pace">配速（分:秒 / 公里）</option>
+            <option value="time">时间（总用时）</option>
+            <option value="pace" selected>配速（分:秒 / 公里）</option>
             <option value="speed">时速（km/h）</option>
           </select>
         </label>
-        <label data-flex-input="time">
+        <label data-flex-input="time" hidden>
           时间（总用时）
           <div class="input-grid" style="grid-template-columns: repeat(3, minmax(70px, 1fr));">
             <input type="number" id="flex-hour" min="0" placeholder="时" />
@@ -514,6 +518,7 @@
     function bindInputs(inputs, handler) {
       inputs.forEach((input) => {
         input.addEventListener("input", handler);
+        input.addEventListener("change", handler);
       });
     }
 
