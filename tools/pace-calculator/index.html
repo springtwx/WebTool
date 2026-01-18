@@ -522,8 +522,8 @@
             <thead>
               <tr>
                 <th>分段</th>
-                <th>累计距离</th>
-                <th>累计用时</th>
+                <th>累计距离（含已跑）</th>
+                <th>累计用时（含已跑）</th>
                 <th>平均配速</th>
               </tr>
             </thead>
@@ -796,8 +796,9 @@
         cumulativeSeconds += (totalSeconds / unitDistance) * segmentSize;
         segments.push({
           label: `第 ${i + 1} 段`,
-          distance: formatUnitValue(cumulativeDistance, 1),
-          time: formatTime(cumulativeSeconds),
+          distanceValue: cumulativeDistance,
+          distanceDecimals: 1,
+          timeSeconds: cumulativeSeconds,
           pace: formatPaceByUnit(secondsPerKm)
         });
       }
@@ -807,8 +808,9 @@
         cumulativeSeconds += (totalSeconds / unitDistance) * remainder;
         segments.push({
           label: `第 ${segments.length + 1} 段`,
-          distance: formatUnitValue(cumulativeDistance, 2),
-          time: formatTime(cumulativeSeconds),
+          distanceValue: cumulativeDistance,
+          distanceDecimals: 2,
+          timeSeconds: cumulativeSeconds,
           pace: formatPaceByUnit(secondsPerKm)
         });
       }
@@ -816,14 +818,14 @@
       return { segments, segmentSize };
     }
 
-    function renderSegmentTable(rows, body) {
+    function renderSegmentTable(rows, body, { distanceOffset = 0, timeOffset = 0 } = {}) {
       body.innerHTML = rows
         .map(
           (row) => `
           <tr>
             <td>${row.label}</td>
-            <td>${row.distance}</td>
-            <td>${row.time}</td>
+            <td>${formatUnitValue(row.distanceValue + distanceOffset, row.distanceDecimals)}</td>
+            <td>${formatTime(row.timeSeconds + timeOffset)}</td>
             <td>${row.pace}</td>
           </tr>
         `
@@ -990,11 +992,15 @@
       if (remainingDistanceKm > 0 && remainingSeconds > 0) {
         const segmentData = buildSegments(remainingDistanceKm, remainingSeconds);
         if (segmentData && segmentData.segments.length > 0) {
+          const currentDistanceUnit = getUnitDistance(currentDistanceKm);
           remainingSegmentCard.hidden = false;
           remainingTitle.textContent = `剩余 ${formatDistance(remainingDistanceKm, 2)} 配速表`;
           remainingUnit.textContent = unitLabels[currentUnit].name;
           remainingRule.textContent = `按剩余距离每 ${segmentData.segmentSize} ${unitLabels[currentUnit].name} 分段`;
-          renderSegmentTable(segmentData.segments, remainingTableBody);
+          renderSegmentTable(segmentData.segments, remainingTableBody, {
+            distanceOffset: currentDistanceUnit,
+            timeOffset: elapsedSeconds
+          });
         } else {
           remainingSegmentCard.hidden = true;
         }
