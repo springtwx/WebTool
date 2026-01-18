@@ -111,6 +111,39 @@
       color: var(--muted);
       font-size: 13px;
     }
+
+    @media (max-width: 720px) {
+      main {
+        padding: 40px 20px 64px;
+      }
+
+      header h1 {
+        font-size: 26px;
+      }
+
+      .tool-card {
+        padding: 18px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      main {
+        padding: 32px 16px 56px;
+      }
+
+      header h1 {
+        font-size: 22px;
+      }
+
+      .tool-grid {
+        gap: 16px;
+      }
+
+      .tool-card__header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
   </style>
 </head>
 <body>

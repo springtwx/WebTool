@@ -20,6 +20,10 @@
       box-sizing: border-box;
     }
 
+    [hidden] {
+      display: none !important;
+    }
+
     body {
       margin: 0;
       background: var(--bg);
@@ -158,6 +162,11 @@
       font-size: 14px;
     }
 
+    .table-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
     th,
     td {
       text-align: left;
@@ -195,6 +204,38 @@
       height: 1px;
       background: var(--border);
       margin: 20px 0 8px;
+    }
+
+    @media (max-width: 720px) {
+      main {
+        padding: 40px 20px 64px;
+      }
+
+      header h1 {
+        font-size: 24px;
+      }
+
+      .card {
+        padding: 18px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      main {
+        padding: 32px 16px 56px;
+      }
+
+      .header-actions {
+        align-items: flex-start;
+      }
+
+      .mode-toggle {
+        flex-wrap: wrap;
+      }
+
+      table {
+        min-width: 420px;
+      }
     }
   </style>
 </head>
@@ -246,17 +287,19 @@
         </label>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>距离</th>
-            <th>完赛时间</th>
-            <th>配速</th>
-            <th>时速</th>
-          </tr>
-        </thead>
-        <tbody id="quick-table-body"></tbody>
-      </table>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>距离</th>
+              <th>完赛时间</th>
+              <th>配速</th>
+              <th>时速</th>
+            </tr>
+          </thead>
+          <tbody id="quick-table-body"></tbody>
+        </table>
+      </div>
     </section>
 
     <section class="card section" id="flex-section">
@@ -270,12 +313,12 @@
         <label>
           选择输入项
           <select id="flex-input-type">
-            <option value="time" selected>时间（总用时）</option>
-            <option value="pace">配速（分:秒 / 公里）</option>
+            <option value="time">时间（总用时）</option>
+            <option value="pace" selected>配速（分:秒 / 公里）</option>
             <option value="speed">时速（km/h）</option>
           </select>
         </label>
-        <label data-flex-input="time">
+        <label data-flex-input="time" hidden>
           时间（总用时）
           <div class="input-grid" style="grid-template-columns: repeat(3, minmax(70px, 1fr));">
             <input type="number" id="flex-hour" min="0" placeholder="时" />
@@ -299,7 +342,7 @@
       <div class="divider"></div>
       <div class="result-grid">
         <div class="result-card">
-          <span class="subtle">完赛时间</span>
+          <span class="subtle">完成时间</span>
           <strong id="flex-result-time">--</strong>
         </div>
         <div class="result-card">
@@ -475,6 +518,7 @@
     function bindInputs(inputs, handler) {
       inputs.forEach((input) => {
         input.addEventListener("input", handler);
+        input.addEventListener("change", handler);
       });
     }
 
