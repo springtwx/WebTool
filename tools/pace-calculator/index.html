@@ -360,7 +360,7 @@
         </label>
         <label data-quick-input="pace">
           <span class="label-inline">
-            配速
+            数值
             <span class="unit-inline">（分:秒 / <span data-unit-distance>公里</span>）</span>
           </span>
           <div class="input-grid" style="grid-template-columns: repeat(2, minmax(80px, 1fr));">
@@ -378,7 +378,7 @@
         </label>
         <label data-quick-input="speed" hidden>
           <span class="label-inline">
-            时速
+            数值
             <span class="unit-inline">（<span data-unit-speed>km/h</span>）</span>
           </span>
           <input type="number" id="speed-input" min="0" step="0.1" placeholder="例如 12.0" />
@@ -455,7 +455,7 @@
         </label>
         <label data-flex-input="pace" hidden>
           <span class="label-inline">
-            配速
+            数值
             <span class="unit-inline">（分:秒 / <span data-unit-distance>公里</span>）</span>
           </span>
           <div class="input-grid" style="grid-template-columns: repeat(2, minmax(80px, 1fr));">
@@ -465,7 +465,7 @@
         </label>
         <label data-flex-input="speed" hidden>
           <span class="label-inline">
-            时速
+            数值
             <span class="unit-inline">（<span data-unit-speed>km/h</span>）</span>
           </span>
           <input type="number" id="flex-speed" min="0" step="0.1" placeholder="例如 12.0" />
@@ -494,7 +494,7 @@
 
       <div class="divider"></div>
       <h3>训练进度推算</h3>
-      <p class="subtle">基于自由模式的距离输入当前进度与目标时间（可选），生成预测完赛时间与剩余分段配速表。</p>
+      <p class="subtle">基于自由模式的距离输入当前进度，自动使用上方完赛时间计算目标配速与剩余分段表。</p>
       <div class="input-grid">
         <label>
           <span class="label-inline">
@@ -511,14 +511,6 @@
             <input type="number" id="progress-sec" min="0" max="59" placeholder="秒" />
           </div>
         </label>
-        <label>
-          目标完赛时间（可选）
-          <div class="input-grid" style="grid-template-columns: repeat(3, minmax(70px, 1fr));">
-            <input type="number" id="target-hour" min="0" placeholder="时" />
-            <input type="number" id="target-min" min="0" max="59" placeholder="分" />
-            <input type="number" id="target-sec" min="0" max="59" placeholder="秒" />
-          </div>
-        </label>
       </div>
 
       <div class="result-grid">
@@ -533,7 +525,7 @@
         <div class="result-card">
           <span class="subtle">与目标配速差</span>
           <strong id="progress-result-diff">--</strong>
-          <span class="hint" id="progress-diff-hint">填写目标完赛时间后计算</span>
+          <span class="hint" id="progress-diff-hint">请先在自由模式计算完赛时间</span>
         </div>
       </div>
 
@@ -570,6 +562,7 @@
     const milesPerKm = 0.621371;
     let currentUnit = "km";
     let selectedQuickDistance = null;
+    let lastFlexTotalSeconds = 0;
 
     const quickDistances = {
       km: [
@@ -635,9 +628,6 @@
     const progressHour = document.getElementById("progress-hour");
     const progressMin = document.getElementById("progress-min");
     const progressSec = document.getElementById("progress-sec");
-    const targetHour = document.getElementById("target-hour");
-    const targetMin = document.getElementById("target-min");
-    const targetSec = document.getElementById("target-sec");
 
     const progressResultTime = document.getElementById("progress-result-time");
     const progressResultPace = document.getElementById("progress-result-pace");
@@ -983,6 +973,7 @@
       const finalPace = totalSeconds > 0 && distanceKm > 0 ? totalSeconds / distanceKm : 0;
       const finalSpeed = totalSeconds > 0 ? distanceKm / (totalSeconds / 3600) : 0;
 
+      lastFlexTotalSeconds = totalSeconds;
       flexResultTime.textContent = formatTime(totalSeconds);
       flexResultPace.textContent = formatPaceByUnit(finalPace);
       flexResultSpeed.textContent = formatSpeedByUnit(finalSpeed);
@@ -993,7 +984,7 @@
       const totalDistanceKm = convertDistanceToKm(toNumber(flexDistance.value));
       const currentDistanceKm = convertDistanceToKm(toNumber(progressCurrentDistance.value));
       const elapsedSeconds = parseTime(progressHour.value, progressMin.value, progressSec.value);
-      const targetSeconds = parseTime(targetHour.value, targetMin.value, targetSec.value);
+      const targetSeconds = lastFlexTotalSeconds;
 
       const currentPace = currentDistanceKm > 0 ? elapsedSeconds / currentDistanceKm : 0;
       const predictedFinish = totalDistanceKm > 0 && currentPace > 0 ? totalDistanceKm * currentPace : 0;
@@ -1009,7 +1000,7 @@
         progressDiffHint.textContent = `目标配速：${formatPaceByUnit(targetPace)}`;
       } else {
         progressResultDiff.textContent = "--";
-        progressDiffHint.textContent = "填写目标完赛时间后计算";
+        progressDiffHint.textContent = "请先在自由模式计算完赛时间";
       }
 
       const remainingDistanceKm = totalDistanceKm - currentDistanceKm;
@@ -1042,10 +1033,7 @@
       [flexDistance, flexInputType, flexHour, flexMin, flexSec, flexPaceMin, flexPaceSec, flexSpeed],
       updateFlexMode
     );
-    bindInputs(
-      [progressCurrentDistance, progressHour, progressMin, progressSec, targetHour, targetMin, targetSec],
-      updateProgressMode
-    );
+    bindInputs([progressCurrentDistance, progressHour, progressMin, progressSec], updateProgressMode);
 
     unitButtons.forEach((button) => {
       button.addEventListener("click", () => {
