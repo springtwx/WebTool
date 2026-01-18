@@ -92,6 +92,11 @@
       gap: 16px;
     }
 
+    .input-grid--controls {
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: start;
+    }
+
     textarea {
       width: 100%;
       min-height: 200px;
@@ -106,9 +111,13 @@
 
     .controls {
       display: flex;
+      flex-direction: column;
       gap: 12px;
-      flex-wrap: wrap;
-      margin: 16px 0;
+      align-self: center;
+    }
+
+    .controls button {
+      min-width: 140px;
     }
 
     button.action {
@@ -162,16 +171,24 @@
         grid-template-columns: 1fr;
       }
 
+      .input-grid--controls {
+        grid-template-columns: 1fr;
+      }
+
       textarea {
         min-height: 160px;
       }
 
       .controls {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
         gap: 10px;
       }
 
       .controls button {
         flex: 1 1 140px;
+        min-width: 0;
       }
 
       .header-actions {
@@ -192,23 +209,22 @@
     </header>
 
     <section class="card">
-      <div class="input-grid">
+      <div class="input-grid input-grid--controls">
         <label>
           原文 / 明文
           <textarea id="plain-input" placeholder="在这里输入文本"></textarea>
         </label>
+        <div class="controls">
+          <button class="action" type="button" id="encode">编码 →</button>
+          <button class="action" type="button" id="decode">← 解码</button>
+          <button class="action secondary" type="button" id="swap">交换内容</button>
+          <button class="action secondary" type="button" id="copy-base64">复制 Base64</button>
+          <button class="action secondary" type="button" id="clear">清空</button>
+        </div>
         <label>
           Base64
           <textarea id="base64-input" placeholder="在这里输入 Base64"></textarea>
         </label>
-      </div>
-
-      <div class="controls">
-        <button class="action" type="button" id="encode">编码 →</button>
-        <button class="action" type="button" id="decode">← 解码</button>
-        <button class="action secondary" type="button" id="swap">交换内容</button>
-        <button class="action secondary" type="button" id="copy-base64">复制 Base64</button>
-        <button class="action secondary" type="button" id="clear">清空</button>
       </div>
 
       <div class="status" id="status"></div>
