@@ -358,31 +358,22 @@
             <option value="speed">时速</option>
           </select>
         </label>
-        <label data-quick-input="pace">
-          <span class="label-inline">
-            数值
-            <span class="unit-inline">（分:秒 / <span data-unit-distance>公里</span>）</span>
-          </span>
+        <div data-quick-input="pace">
           <div class="input-grid" style="grid-template-columns: repeat(2, minmax(80px, 1fr));">
-            <input type="number" id="pace-min" min="0" placeholder="分" />
-            <input type="number" id="pace-sec" min="0" max="59" placeholder="秒" />
+            <input type="number" id="pace-min" min="0" placeholder="分" aria-label="配速 分钟" />
+            <input type="number" id="pace-sec" min="0" max="59" placeholder="秒" aria-label="配速 秒" />
           </div>
-        </label>
-        <label data-quick-input="time" hidden>
-          时间（总用时）
+        </div>
+        <div data-quick-input="time" hidden>
           <div class="input-grid" style="grid-template-columns: repeat(3, minmax(70px, 1fr));">
-            <input type="number" id="time-hour" min="0" placeholder="时" />
-            <input type="number" id="time-min" min="0" max="59" placeholder="分" />
-            <input type="number" id="time-sec" min="0" max="59" placeholder="秒" />
+            <input type="number" id="time-hour" min="0" placeholder="时" aria-label="时间 小时" />
+            <input type="number" id="time-min" min="0" max="59" placeholder="分" aria-label="时间 分钟" />
+            <input type="number" id="time-sec" min="0" max="59" placeholder="秒" aria-label="时间 秒" />
           </div>
-        </label>
-        <label data-quick-input="speed" hidden>
-          <span class="label-inline">
-            数值
-            <span class="unit-inline">（<span data-unit-speed>km/h</span>）</span>
-          </span>
-          <input type="number" id="speed-input" min="0" step="0.1" placeholder="例如 12.0" />
-        </label>
+        </div>
+        <div data-quick-input="speed" hidden>
+          <input type="number" id="speed-input" min="0" step="0.1" placeholder="例如 12.0" aria-label="时速" />
+        </div>
       </div>
 
       <div class="table-wrapper">
@@ -445,31 +436,22 @@
             <option value="speed">时速</option>
           </select>
         </label>
-        <label data-flex-input="time" hidden>
-          时间（总用时）
+        <div data-flex-input="time" hidden>
           <div class="input-grid" style="grid-template-columns: repeat(3, minmax(70px, 1fr));">
-            <input type="number" id="flex-hour" min="0" placeholder="时" />
-            <input type="number" id="flex-min" min="0" max="59" placeholder="分" />
-            <input type="number" id="flex-sec" min="0" max="59" placeholder="秒" />
+            <input type="number" id="flex-hour" min="0" placeholder="时" aria-label="时间 小时" />
+            <input type="number" id="flex-min" min="0" max="59" placeholder="分" aria-label="时间 分钟" />
+            <input type="number" id="flex-sec" min="0" max="59" placeholder="秒" aria-label="时间 秒" />
           </div>
-        </label>
-        <label data-flex-input="pace" hidden>
-          <span class="label-inline">
-            数值
-            <span class="unit-inline">（分:秒 / <span data-unit-distance>公里</span>）</span>
-          </span>
+        </div>
+        <div data-flex-input="pace" hidden>
           <div class="input-grid" style="grid-template-columns: repeat(2, minmax(80px, 1fr));">
-            <input type="number" id="flex-pace-min" min="0" placeholder="分" />
-            <input type="number" id="flex-pace-sec" min="0" max="59" placeholder="秒" />
+            <input type="number" id="flex-pace-min" min="0" placeholder="分" aria-label="配速 分钟" />
+            <input type="number" id="flex-pace-sec" min="0" max="59" placeholder="秒" aria-label="配速 秒" />
           </div>
-        </label>
-        <label data-flex-input="speed" hidden>
-          <span class="label-inline">
-            数值
-            <span class="unit-inline">（<span data-unit-speed>km/h</span>）</span>
-          </span>
-          <input type="number" id="flex-speed" min="0" step="0.1" placeholder="例如 12.0" />
-        </label>
+        </div>
+        <div data-flex-input="speed" hidden>
+          <input type="number" id="flex-speed" min="0" step="0.1" placeholder="例如 12.0" aria-label="时速" />
+        </div>
       </div>
 
       <div class="divider"></div>
@@ -748,10 +730,10 @@
       speedLabels.forEach((label) => {
         label.textContent = unitLabels[currentUnit].speedUnit;
       });
-      quickPaceOption.textContent = "配速";
-      quickSpeedOption.textContent = "时速";
-      flexPaceOption.textContent = "配速";
-      flexSpeedOption.textContent = "时速";
+      quickPaceOption.textContent = `配速（分:秒 / ${unitLabels[currentUnit].name}）`;
+      quickSpeedOption.textContent = `时速（${unitLabels[currentUnit].speedUnit}）`;
+      flexPaceOption.textContent = `配速（分:秒 / ${unitLabels[currentUnit].name}）`;
+      flexSpeedOption.textContent = `时速（${unitLabels[currentUnit].speedUnit}）`;
     }
 
     function convertInputValue(value, multiplier) {
