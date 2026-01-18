@@ -158,6 +158,11 @@
       font-size: 14px;
     }
 
+    .table-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
     th,
     td {
       text-align: left;
@@ -195,6 +200,38 @@
       height: 1px;
       background: var(--border);
       margin: 20px 0 8px;
+    }
+
+    @media (max-width: 720px) {
+      main {
+        padding: 40px 20px 64px;
+      }
+
+      header h1 {
+        font-size: 24px;
+      }
+
+      .card {
+        padding: 18px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      main {
+        padding: 32px 16px 56px;
+      }
+
+      .header-actions {
+        align-items: flex-start;
+      }
+
+      .mode-toggle {
+        flex-wrap: wrap;
+      }
+
+      table {
+        min-width: 420px;
+      }
     }
   </style>
 </head>
@@ -246,17 +283,19 @@
         </label>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>距离</th>
-            <th>完赛时间</th>
-            <th>配速</th>
-            <th>时速</th>
-          </tr>
-        </thead>
-        <tbody id="quick-table-body"></tbody>
-      </table>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>距离</th>
+              <th>完赛时间</th>
+              <th>配速</th>
+              <th>时速</th>
+            </tr>
+          </thead>
+          <tbody id="quick-table-body"></tbody>
+        </table>
+      </div>
     </section>
 
     <section class="card section" id="flex-section">
