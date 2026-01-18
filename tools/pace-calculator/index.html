@@ -303,7 +303,7 @@
 
     .tempo-row {
       display: grid;
-      grid-template-columns: 1.2fr 1fr 0.4fr;
+      grid-template-columns: 1fr 1fr 1.2fr 0.4fr;
       gap: 12px;
       align-items: center;
     }
@@ -321,6 +321,14 @@
       display: grid;
       grid-template-columns: repeat(2, minmax(80px, 1fr));
       gap: 8px;
+    }
+
+    .tempo-row .tempo-input {
+      display: none;
+    }
+
+    .tempo-row .tempo-input.active {
+      display: block;
     }
 
     .tempo-row button {
@@ -600,7 +608,8 @@
       <p class="subtle">为同一次跑步设置多个分段配速，自动计算整体平均配速与时速。</p>
       <div class="tempo-row tempo-row--header">
         <span>分段距离（<span data-unit-distance>公里</span>）</span>
-        <span>分段配速（分:秒 / <span data-unit-distance>公里</span>）</span>
+        <span>输入类型</span>
+        <span>分段输入</span>
         <span>操作</span>
       </div>
       <div class="tempo-rows" id="tempo-rows"></div>
@@ -625,6 +634,21 @@
           <span class="subtle">平均时速</span>
           <strong id="tempo-avg-speed">--</strong>
         </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>分段</th>
+              <th>距离</th>
+              <th>用时</th>
+              <th>配速</th>
+              <th>时速</th>
+            </tr>
+          </thead>
+          <tbody id="tempo-table-body"></tbody>
+        </table>
       </div>
     </section>
   </main>
@@ -701,6 +725,7 @@
     const tempoTotalTime = document.getElementById("tempo-total-time");
     const tempoAvgPace = document.getElementById("tempo-avg-pace");
     const tempoAvgSpeed = document.getElementById("tempo-avg-speed");
+    const tempoTableBody = document.getElementById("tempo-table-body");
 
     const segmentCard = document.getElementById("quick-segment-card");
     const segmentTableBody = document.getElementById("segment-table-body");
@@ -836,6 +861,16 @@
       quickSpeedOption.textContent = `时速（${unitLabels[currentUnit].speedUnit}）`;
       flexPaceOption.textContent = `配速（分:秒 / ${unitLabels[currentUnit].name}）`;
       flexSpeedOption.textContent = `时速（${unitLabels[currentUnit].speedUnit}）`;
+      tempoRows.querySelectorAll("[data-tempo-type]").forEach((select) => {
+        const paceOption = select.querySelector('option[value="pace"]');
+        const speedOption = select.querySelector('option[value="speed"]');
+        if (paceOption) {
+          paceOption.textContent = `配速（分:秒 / ${unitLabels[currentUnit].name}）`;
+        }
+        if (speedOption) {
+          speedOption.textContent = `时速（${unitLabels[currentUnit].speedUnit}）`;
+        }
+      });
     }
 
     function convertInputValue(value, multiplier) {
@@ -1093,14 +1128,37 @@
       row.dataset.tempoRow = "true";
       row.innerHTML = `
         <input type="number" min="0" step="0.01" placeholder="分段距离" data-tempo-distance aria-label="分段距离" />
-        <div class="pace-inputs">
-          <input type="number" min="0" placeholder="分" data-tempo-pace-min aria-label="分段配速 分钟" />
-          <input type="number" min="0" max="59" placeholder="秒" data-tempo-pace-sec aria-label="分段配速 秒" />
+        <select data-tempo-type aria-label="分段输入类型">
+          <option value="pace" selected>配速</option>
+          <option value="time">时间</option>
+          <option value="speed">时速</option>
+        </select>
+        <div class="tempo-input tempo-input--pace active" data-tempo-input="pace">
+          <div class="pace-inputs">
+            <input type="number" min="0" placeholder="分" data-tempo-pace-min aria-label="分段配速 分钟" />
+            <input type="number" min="0" max="59" placeholder="秒" data-tempo-pace-sec aria-label="分段配速 秒" />
+          </div>
+        </div>
+        <div class="tempo-input tempo-input--time" data-tempo-input="time">
+          <div class="pace-inputs" style="grid-template-columns: repeat(3, minmax(70px, 1fr));">
+            <input type="number" min="0" placeholder="时" data-tempo-hour aria-label="分段时间 小时" />
+            <input type="number" min="0" max="59" placeholder="分" data-tempo-min aria-label="分段时间 分钟" />
+            <input type="number" min="0" max="59" placeholder="秒" data-tempo-sec aria-label="分段时间 秒" />
+          </div>
+        </div>
+        <div class="tempo-input tempo-input--speed" data-tempo-input="speed">
+          <input type="number" min="0" step="0.1" placeholder="例如 12.0" data-tempo-speed aria-label="分段时速" />
         </div>
         <button type="button" data-tempo-remove>移除</button>
       `;
       row.querySelectorAll("input").forEach((input) => {
         input.addEventListener("input", updateTempoMode);
+      });
+      row.querySelector("[data-tempo-type]").addEventListener("change", (event) => {
+        row.querySelectorAll("[data-tempo-input]").forEach((input) => {
+          input.classList.toggle("active", input.dataset.tempoInput === event.target.value);
+        });
+        updateTempoMode();
       });
       row.querySelector("[data-tempo-remove]").addEventListener("click", () => {
         row.remove();
@@ -1112,17 +1170,43 @@
     function updateTempoMode() {
       let totalDistanceKm = 0;
       let totalSeconds = 0;
+      const segments = [];
 
       tempoRows.querySelectorAll("[data-tempo-row]").forEach((row) => {
         const distanceValue = toNumber(row.querySelector("[data-tempo-distance]").value);
-        const paceMinValue = row.querySelector("[data-tempo-pace-min]").value;
-        const paceSecValue = row.querySelector("[data-tempo-pace-sec]").value;
+        const inputType = row.querySelector("[data-tempo-type]").value;
+        const paceMinValue = row.querySelector("[data-tempo-pace-min]")?.value;
+        const paceSecValue = row.querySelector("[data-tempo-pace-sec]")?.value;
+        const timeHourValue = row.querySelector("[data-tempo-hour]")?.value;
+        const timeMinValue = row.querySelector("[data-tempo-min]")?.value;
+        const timeSecValue = row.querySelector("[data-tempo-sec]")?.value;
+        const speedValue = toNumber(row.querySelector("[data-tempo-speed]")?.value);
         const distanceKm = convertDistanceToKm(distanceValue);
-        const paceSecondsKm = convertPaceToKm(parsePace(paceMinValue, paceSecValue));
+        let segmentSeconds = 0;
 
-        if (distanceKm > 0 && paceSecondsKm > 0) {
+        if (distanceKm > 0) {
+          if (inputType === "pace") {
+            const paceSecondsKm = convertPaceToKm(parsePace(paceMinValue, paceSecValue));
+            segmentSeconds = paceSecondsKm > 0 ? paceSecondsKm * distanceKm : 0;
+          } else if (inputType === "time") {
+            segmentSeconds = parseTime(timeHourValue, timeMinValue, timeSecValue);
+          } else if (inputType === "speed") {
+            const speedKm = convertSpeedToKm(speedValue);
+            segmentSeconds = speedKm > 0 ? (distanceKm / speedKm) * 3600 : 0;
+          }
+        }
+
+        if (distanceKm > 0 && segmentSeconds > 0) {
           totalDistanceKm += distanceKm;
-          totalSeconds += distanceKm * paceSecondsKm;
+          totalSeconds += segmentSeconds;
+          const segmentPace = segmentSeconds / distanceKm;
+          const segmentSpeed = distanceKm / (segmentSeconds / 3600);
+          segments.push({
+            distance: formatDistance(distanceKm, 2),
+            time: formatTime(segmentSeconds),
+            pace: formatPaceByUnit(segmentPace),
+            speed: formatSpeedByUnit(segmentSpeed)
+          });
         }
       });
 
@@ -1133,6 +1217,20 @@
       tempoTotalTime.textContent = formatTime(totalSeconds);
       tempoAvgPace.textContent = formatPaceByUnit(avgPace);
       tempoAvgSpeed.textContent = formatSpeedByUnit(avgSpeed);
+
+      tempoTableBody.innerHTML = segments
+        .map(
+          (segment, index) => `
+          <tr>
+            <td>第 ${index + 1} 段</td>
+            <td>${segment.distance}</td>
+            <td>${segment.time}</td>
+            <td>${segment.pace}</td>
+            <td>${segment.speed}</td>
+          </tr>
+        `
+        )
+        .join("");
     }
 
     function updateProgressMode() {
