@@ -112,12 +112,14 @@
     .controls {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
       align-self: center;
     }
 
     .controls button {
-      min-width: 140px;
+      min-width: 120px;
+      padding: 8px 12px;
+      font-size: 13px;
     }
 
     button.action {
@@ -215,8 +217,20 @@
           <textarea id="plain-input" placeholder="在这里输入文本"></textarea>
         </label>
         <div class="controls">
-          <button class="action" type="button" id="encode">编码 →</button>
-          <button class="action" type="button" id="decode">← 解码</button>
+          <button
+            class="action"
+            type="button"
+            id="encode"
+            data-label-desktop="编码 →"
+            data-label-mobile="编码 ↓"
+          >编码 →</button>
+          <button
+            class="action"
+            type="button"
+            id="decode"
+            data-label-desktop="← 解码"
+            data-label-mobile="↑ 解码"
+          >← 解码</button>
           <button class="action secondary" type="button" id="swap">交换内容</button>
           <button class="action secondary" type="button" id="copy-base64">复制 Base64</button>
           <button class="action secondary" type="button" id="clear">清空</button>
@@ -237,6 +251,14 @@
     const plainInput = document.getElementById("plain-input");
     const base64Input = document.getElementById("base64-input");
     const status = document.getElementById("status");
+    const labelButtons = document.querySelectorAll("[data-label-desktop][data-label-mobile]");
+
+    function updateButtonLabels() {
+      const isMobile = window.matchMedia("(max-width: 520px)").matches;
+      labelButtons.forEach((button) => {
+        button.textContent = isMobile ? button.dataset.labelMobile : button.dataset.labelDesktop;
+      });
+    }
 
     function setStatus(message, isError = false) {
       status.textContent = message;
@@ -303,6 +325,9 @@
       base64Input.value = "";
       setStatus("已清空");
     });
+
+    updateButtonLabels();
+    window.addEventListener("resize", updateButtonLabels);
 
     copyButton.addEventListener("click", async () => {
       const url = window.location.href;
