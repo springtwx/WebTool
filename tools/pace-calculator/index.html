@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>跑步配速计算器</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8F%83%3C/text%3E%3C/svg%3E" />
   <style>
     :root {
       color-scheme: light;
@@ -52,6 +53,23 @@
     header h1 {
       margin: 0;
       font-size: 30px;
+    }
+
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .page-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: #eef1f6;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
     }
 
     header p {
@@ -364,6 +382,12 @@
         font-size: 24px;
       }
 
+      .page-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+      }
+
       .card {
         padding: 18px;
       }
@@ -375,6 +399,10 @@
       }
 
       .header-actions {
+        align-items: flex-start;
+      }
+
+      .page-title {
         align-items: flex-start;
       }
 
@@ -402,7 +430,10 @@
     <header>
       <a href="../../">← 返回工具首页</a>
       <div class="header-actions">
-        <h1>跑步配速计算器</h1>
+        <div class="page-title">
+          <span class="page-icon" aria-hidden="true">🏃</span>
+          <h1>跑步配速计算器</h1>
+        </div>
         <button class="copy-link" type="button" id="copy-link">复制此工具链接</button>
       </div>
       <p>切换快捷模式或自由模式，快速得到配速、时速与完赛时间。</p>
